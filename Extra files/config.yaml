@@ -1,0 +1,77 @@
+data:
+  raw_dir: ./data/raw/mvtec
+  processed_dir: ./data/processed
+  train_split: 0.8
+  val_split: 0.1
+  test_split: 0.1
+  image_size: 256
+  batch_size: 32
+  num_workers: 8
+  categories:
+    - bottle
+    - cable
+    - capsule
+    - carpet
+    - grid
+    - hazelnut
+    - leather
+    - metal_nut
+    - pill
+    - screw
+    - tile
+    - toothbrush
+    - transistor
+    - wood
+    - zipper
+
+gan:
+  latent_dim: 128
+  defect_embedding_dim: 64
+  learning_rate_g: 1e-4
+  learning_rate_d: 2e-4
+  beta1: 0.0
+  beta2: 0.9
+  gradient_penalty_weight: 10.0
+  discriminator_steps: 5
+  epochs: 200
+  early_stopping_patience: 20
+  early_stopping_metric: fid
+  early_stopping_threshold: 20.0
+  checkpoint_interval: 10
+  log_interval: 100
+  mixed_precision: true
+  gradient_accumulation_steps: 4
+
+classifier:
+  model_name: efficientnet_b2
+  num_classes: 15
+  learning_rate: 1e-3
+  epochs: 100
+  batch_size: 32
+  label_smoothing: 0.1
+  focal_loss_alpha: 0.25
+  focal_loss_gamma: 2.0
+  warmup_epochs: 5
+  tta_enabled: true
+  tta_augmentations: 4
+
+training:
+  device: cuda
+  seed: 42
+  mixed_precision: true
+  gradient_clip: 1.0
+  log_dir: ./logs
+  checkpoint_dir: ./checkpoints
+  output_dir: ./outputs
+  wandb_project: gan-defect-augmentation
+  wandb_entity: null
+  save_best_only: true
+
+quality_control:
+  fid_threshold: 25.0
+  lpips_threshold: 0.5
+  defect_coverage_threshold: 0.3
+  sharpness_threshold: 100.0
+  keep_ratio: 0.5
+  dino_model: dinov2_vitb14
+  feature_similarity_threshold: 0.7

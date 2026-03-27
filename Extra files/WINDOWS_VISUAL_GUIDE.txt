@@ -1,0 +1,293 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                  GAN DEFECT AUGMENTATION - WINDOWS SETUP                   ║
+║                         VISUAL STEP-BY-STEP GUIDE                          ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌─ STEP 1: OPEN POWERSHELL ─────────────────────────────────────────────────┐
+│                                                                             │
+│  1. Press: Windows Key + X                                                │
+│  2. Select: Windows PowerShell (Admin)                                    │
+│  3. Or: Search "PowerShell" and run as Administrator                      │
+│                                                                             │
+│  ✅ You should see: PS C:\Users\Arjun>                                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STEP 2: NAVIGATE TO PROJECT ─────────────────────────────────────────────┐
+│                                                                             │
+│  Command:                                                                  │
+│  cd "C:\Users\Arjun\OneDrive\Desktop\Gan_Project"                         │
+│                                                                             │
+│  ✅ You should see: PS C:\Users\Arjun\OneDrive\Desktop\Gan_Project>       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STEP 3: CREATE VIRTUAL ENVIRONMENT ──────────────────────────────────────┐
+│                                                                             │
+│  Command:                                                                  │
+│  python -m venv gan_env                                                   │
+│                                                                             │
+│  ⏳ Wait: ~30 seconds                                                      │
+│  ✅ You should see: (no output = success)                                 │
+│                                                                             │
+│  📁 New folder created: gan_env/                                          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STEP 4: ACTIVATE VIRTUAL ENVIRONMENT ────────────────────────────────────┐
+│                                                                             │
+│  Command:                                                                  │
+│  .\gan_env\Scripts\Activate.ps1                                           │
+│                                                                             │
+│  ✅ You should see: (gan_env) PS C:\Users\Arjun\OneDrive\Desktop\...>    │
+│                                                                             │
+│  💡 Notice: (gan_env) appears at the start of the prompt                  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STEP 5: UPGRADE PIP ─────────────────────────────────────────────────────┐
+│                                                                             │
+│  Command:                                                                  │
+│  python -m pip install --upgrade pip                                      │
+│                                                                             │
+│  ⏳ Wait: ~30 seconds                                                      │
+│  ✅ You should see: Successfully installed pip-X.X.X                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STEP 6: INSTALL PYTORCH WITH CUDA ───────────────────────────────────────┐
+│                                                                             │
+│  Command:                                                                  │
+│  pip install torch torchvision torchaudio --index-url https://download... │
+│                                                                             │
+│  ⏳ Wait: 2-3 minutes (large download)                                     │
+│  ✅ You should see: Successfully installed torch-2.1.0+cu121              │
+│                                                                             │
+│  📊 Size: ~2.5 GB                                                         │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STEP 7: INSTALL ML PACKAGES ─────────────────────────────────────────────┐
+│                                                                             │
+│  Command:                                                                  │
+│  pip install wandb omegaconf albumentations timm pytorch-fid scikit-learn │
+│  pandas matplotlib seaborn plotly tqdm rich tensorboard requests          │
+│                                                                             │
+│  ⏳ Wait: 2-3 minutes                                                      │
+│  ✅ You should see: Successfully installed [many packages]                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STEP 8: CREATE DIRECTORIES ──────────────────────────────────────────────┐
+│                                                                             │
+│  Commands:                                                                 │
+│  mkdir data\raw -ErrorAction SilentlyContinue                             │
+│  mkdir data\processed -ErrorAction SilentlyContinue                       │
+│  mkdir checkpoints -ErrorAction SilentlyContinue                          │
+│  mkdir logs -ErrorAction SilentlyContinue                                 │
+│  mkdir outputs -ErrorAction SilentlyContinue                              │
+│                                                                             │
+│  ✅ You should see: (no output = success)                                 │
+│                                                                             │
+│  📁 New folders created: data/, checkpoints/, logs/, outputs/             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STEP 9: TEST IMPORTS ────────────────────────────────────────────────────┐
+│                                                                             │
+│  Command:                                                                  │
+│  python -c "import torch, wandb, omegaconf; print('✅ ALL PACKAGES OK')"  │
+│                                                                             │
+│  ✅ You should see: ✅ ALL PACKAGES OK                                    │
+│                                                                             │
+│  ❌ If error: Something went wrong, check installation                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STEP 10: TEST GPU ───────────────────────────────────────────────────────┐
+│                                                                             │
+│  Command:                                                                  │
+│  python -c "import torch; print(f'GPU: {torch.cuda.get_device_name(0)...}')"
+│                                                                             │
+│  ✅ You should see: GPU: NVIDIA GeForce RTX 3080                          │
+│                    (or your GPU name)                                      │
+│                                                                             │
+│  ⚠️  If you see: GPU: NO GPU                                              │
+│     This is OK! Code will use CPU (slower but works)                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STEP 11: DOWNLOAD DATASET ───────────────────────────────────────────────┐
+│                                                                             │
+│  Command:                                                                  │
+│  python download_mvtec_fixed.py                                           │
+│                                                                             │
+│  ⏳ Wait: 5-10 minutes (2.2 GB download)                                   │
+│  ✅ You should see: ✅ MVTec AD ready!                                    │
+│                    📁 Location: data/raw/mvtec                            │
+│                    📊 Categories: 15                                       │
+│                                                                             │
+│  📁 New folder created: data/raw/mvtec/ (2.2 GB)                          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ STEP 12: VERIFY SETUP ───────────────────────────────────────────────────┐
+│                                                                             │
+│  Command:                                                                  │
+│  python src/main.py --config config.yaml                                  │
+│                                                                             │
+│  ⏳ Wait: ~30 seconds                                                      │
+│  ✅ You should see: Setup completed successfully                          │
+│                                                                             │
+│  ❌ If error: Check error message and troubleshooting section             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                         ✅ SETUP COMPLETE!                                 ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+📊 EXPECTED DIRECTORY STRUCTURE:
+
+Gan_Project/
+├── gan_env/                    ✅ Virtual environment
+├── data/
+│   ├── raw/
+│   │   └── mvtec/              ✅ Dataset (2.2 GB)
+│   │       ├── bottle/
+│   │       ├── cable/
+│   │       ├── capsule/
+│   │       └── ... (12 more)
+│   └── processed/
+├── checkpoints/                ✅ Model checkpoints
+├── logs/                       ✅ Training logs
+├── outputs/                    ✅ Generated outputs
+├── src/                        ✅ Source code
+├── notebooks/                  ✅ Jupyter notebooks
+├── config.yaml                 ✅ Configuration
+├── download_mvtec_fixed.py     ✅ Fixed download script
+└── README.md                   ✅ Documentation
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                         🚀 NEXT STEPS                                      ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+OPTION 1: Quick Test (5 minutes)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ .\gan_env\Scripts\Activate.ps1                                             │
+│ python src/main.py --config config.yaml                                    │
+│ jupyter notebook notebooks/01_setup.ipynb                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+OPTION 2: Train GAN (2-3 days)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ .\gan_env\Scripts\Activate.ps1                                             │
+│ python src/train_gan.py --config config.yaml                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+OPTION 3: Train Classifier (4 hours)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ .\gan_env\Scripts\Activate.ps1                                             │
+│ python src/train_classifier.py --config config.yaml                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    💡 IMPORTANT REMINDERS                                  ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+1. ALWAYS ACTIVATE ENVIRONMENT FIRST
+   .\gan_env\Scripts\Activate.ps1
+   (You'll see (gan_env) at the start of the prompt)
+
+2. TO DEACTIVATE
+   deactivate
+
+3. TO DELETE ENVIRONMENT AND START OVER
+   Remove-Item -Recurse -Force gan_env
+
+4. MONITOR GPU DURING TRAINING (in separate PowerShell)
+   nvidia-smi
+
+5. VIEW TRAINING LOGS (in separate PowerShell)
+   Get-Content logs/gan-trainer.log -Wait
+
+6. VIEW WANDB DASHBOARD
+   https://wandb.ai/your-username/gan-defect-augmentation
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    ⏱️ TIME BREAKDOWN                                       ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+Step 1-2:   Navigate to project          ~1 min
+Step 3:     Create venv                  ~1 min
+Step 4:     Activate venv                ~1 min
+Step 5:     Upgrade pip                  ~1 min
+Step 6:     Install PyTorch              ~3 min
+Step 7:     Install ML packages          ~3 min
+Step 8:     Create directories           ~1 min
+Step 9:     Test imports                 ~1 min
+Step 10:    Test GPU                     ~1 min
+Step 11:    Download dataset             ~10 min
+Step 12:    Verify setup                 ~1 min
+────────────────────────────────────────────
+TOTAL:                                   ~25 min
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    🆘 TROUBLESHOOTING                                      ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+PROBLEM: "Execution Policy" Error
+SOLUTION: Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+PROBLEM: "Python not found"
+SOLUTION: Install from https://www.python.org/ (check "Add Python to PATH")
+
+PROBLEM: "CUDA not available" (GPU shows "NO GPU")
+SOLUTION: Install NVIDIA drivers from https://www.nvidia.com/Download/
+
+PROBLEM: Dataset download 404 error
+SOLUTION: Already fixed! Use download_mvtec_fixed.py
+
+PROBLEM: Import errors
+SOLUTION: Reinstall packages:
+         pip install --upgrade torch torchvision torchaudio --index-url https://...
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    📚 DOCUMENTATION                                        ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+START_HERE.md              - Quick 5-minute entry point
+README.md                  - Complete documentation
+QUICKSTART.md              - Quick start guide
+WINDOWS_SETUP.md           - Detailed Windows guide
+WINDOWS_QUICK_COMMANDS.txt - Quick reference
+WINDOWS_FIX_SUMMARY.md     - Summary of fixes
+PROJECT_OVERVIEW.md        - Architecture overview
+PHASE2_3_4_GUIDE.md        - Training guide
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    ✅ SUCCESS INDICATORS                                   ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+After setup, you should see:
+
+✅ ALL PACKAGES OK
+GPU: NVIDIA GeForce RTX 3080
+Setup completed successfully
+
+If you see these, you're ready to train! 🚀
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    🎉 YOU'RE READY!                                        ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+All 3 Windows issues are FIXED:
+✅ No conda needed (using venv)
+✅ All packages installed (via pip)
+✅ Dataset download working (fixed URL)
+
+Next: Run the setup commands above!
+
+Questions? See WINDOWS_SETUP.md or README.md
+
+Let's go! 🚀
