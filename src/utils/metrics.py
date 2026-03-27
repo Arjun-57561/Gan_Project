@@ -8,7 +8,7 @@ from sklearn.metrics import (
     confusion_matrix,
     classification_report,
 )
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 
 
 def compute_classification_metrics(
