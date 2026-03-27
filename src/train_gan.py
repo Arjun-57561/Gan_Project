@@ -293,6 +293,44 @@ class GANTrainer:
         
         return checkpoint["epoch"]
     
+    def generate_synthetic_images(
+        self,
+        data_loader,
+        output_dir: str,
+        num_images: int = 500,
+    ):
+        """Generate and save synthetic defective images after training."""
+        from torchvision.utils import save_image
+
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        self.generator.eval()
+        count = 0
+
+        with torch.no_grad():
+            for batch in data_loader:
+                if count >= num_images:
+                    break
+
+                real_images = batch["image"].to(self.device)
+                defect_masks = batch["mask"].unsqueeze(1).to(self.device)
+                defect_types = batch["label"].to(self.device)
+
+                fake_images = self.generator(real_images, defect_masks, defect_types)
+
+                for i in range(fake_images.shape[0]):
+                    if count >= num_images:
+                        break
+                    save_image(
+                        fake_images[i],
+                        output_path / f"synthetic_{count:05d}.png",
+                        normalize=True,
+                    )
+                    count += 1
+
+        self.logger.info(f"Saved {count} synthetic images to {output_dir}")
+
     def train(self, train_loader):
         """Train GAN."""
         self.logger.info("Starting GAN training")
