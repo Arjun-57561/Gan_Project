@@ -7,14 +7,13 @@ from torch.nn.utils import spectral_norm
 class ConditionalInstanceNorm(nn.Module):
     """Conditional Instance Normalization."""
     
-    def __init__(self, num_features: int, num_classes: int):
+    def __init__(self, num_features: int, embedding_dim: int):
         super().__init__()
         self.num_features = num_features
-        self.num_classes = num_classes
         
         self.instance_norm = nn.InstanceNorm2d(num_features, affine=False)
-        self.gamma = nn.Linear(num_classes, num_features)
-        self.beta = nn.Linear(num_classes, num_features)
+        self.gamma = nn.Linear(embedding_dim, num_features)
+        self.beta  = nn.Linear(embedding_dim, num_features)
         
         # Initialize to identity
         nn.init.ones_(self.gamma.weight)
@@ -26,34 +25,32 @@ class ConditionalInstanceNorm(nn.Module):
         """
         Args:
             x: (B, C, H, W)
-            class_embedding: (B, num_classes)
+            class_embedding: (B, embedding_dim)
         
         Returns:
             (B, C, H, W)
         """
         normalized = self.instance_norm(x)
-        
         gamma = self.gamma(class_embedding).unsqueeze(-1).unsqueeze(-1)
-        beta = self.beta(class_embedding).unsqueeze(-1).unsqueeze(-1)
-        
+        beta  = self.beta(class_embedding).unsqueeze(-1).unsqueeze(-1)
         return gamma * normalized + beta
 
 
 class ResidualBlock(nn.Module):
     """Residual block with spectral normalization."""
     
-    def __init__(self, in_channels: int, out_channels: int, num_classes: int = None):
+    def __init__(self, in_channels: int, out_channels: int, embedding_dim: int = None):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.use_cin = num_classes is not None
+        self.use_cin = embedding_dim is not None
         
         self.conv1 = spectral_norm(nn.Conv2d(in_channels, out_channels, 3, padding=1))
         self.conv2 = spectral_norm(nn.Conv2d(out_channels, out_channels, 3, padding=1))
         
         if self.use_cin:
-            self.cin1 = ConditionalInstanceNorm(out_channels, num_classes)
-            self.cin2 = ConditionalInstanceNorm(out_channels, num_classes)
+            self.cin1 = ConditionalInstanceNorm(out_channels, embedding_dim)
+            self.cin2 = ConditionalInstanceNorm(out_channels, embedding_dim)
         else:
             self.in1 = nn.InstanceNorm2d(out_channels)
             self.in2 = nn.InstanceNorm2d(out_channels)
@@ -136,16 +133,13 @@ class Generator(nn.Module):
         self.enc3 = self._make_encoder_block(base_channels * 4, base_channels * 8)  # 64 -> 32
         self.enc4 = self._make_encoder_block(base_channels * 8, base_channels * 8)  # 32 -> 16
         
-        # Bottleneck
-        self.bottleneck = nn.Sequential(
-            spectral_norm(nn.Conv2d(base_channels * 8, base_channels * 16, 3, padding=1)),
-            nn.InstanceNorm2d(base_channels * 16),
-            nn.ReLU(inplace=True),
-            ResidualBlock(base_channels * 16, base_channels * 16, num_classes),
-            spectral_norm(nn.Conv2d(base_channels * 16, base_channels * 8, 3, padding=1)),
-            nn.InstanceNorm2d(base_channels * 8),
-            nn.ReLU(inplace=True),
-        )
+        # Bottleneck (cannot use nn.Sequential — ResidualBlock needs class_embedding)
+        self.bottleneck_conv1 = spectral_norm(nn.Conv2d(base_channels * 8, base_channels * 16, 3, padding=1))
+        self.bottleneck_norm1 = nn.InstanceNorm2d(base_channels * 16)
+        self.bottleneck_res   = ResidualBlock(base_channels * 16, base_channels * 16, defect_embedding_dim)
+        self.bottleneck_conv2 = spectral_norm(nn.Conv2d(base_channels * 16, base_channels * 8, 3, padding=1))
+        self.bottleneck_norm2 = nn.InstanceNorm2d(base_channels * 8)
+        self.bottleneck_relu  = nn.ReLU(inplace=True)
         
         # Decoder (upsampling with skip connections)
         self.dec4 = self._make_decoder_block(base_channels * 16, base_channels * 8)  # 16 -> 32
@@ -225,7 +219,9 @@ class Generator(nn.Module):
         enc4 = self.enc4(enc3)
         
         # Bottleneck
-        bottleneck = self.bottleneck(enc4)
+        b = self.bottleneck_relu(self.bottleneck_norm1(self.bottleneck_conv1(enc4)))
+        b = self.bottleneck_res(b, class_embedding)
+        bottleneck = self.bottleneck_relu(self.bottleneck_norm2(self.bottleneck_conv2(b)))
         
         # Decoder with skip connections
         dec4 = self.dec4(torch.cat([bottleneck, enc4], dim=1))
